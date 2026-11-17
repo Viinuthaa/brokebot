@@ -5,7 +5,9 @@ import {
   ExchangeSequencer,
 } from '@lob/engine';
 import {
+  AIThoughtLog,
   BotAgent,
+  LLMTraderAgent,
   MarketMakerBot,
   MeanReversionBot,
   MomentumBot,
@@ -20,6 +22,7 @@ export class ExchangeServer {
   private sequencer = new ExchangeSequencer();
   private bots: BotAgent[] = [];
   private recentTrades: Array<{ price: number; qty: number; timestamp: number }> = [];
+  private aiThoughts: AIThoughtLog[] = [];
   private fairValue = 10000;
   private rng = new SeededRNG(42);
   private tickCount = 0;
@@ -37,6 +40,7 @@ export class ExchangeServer {
   private setupSimulation(): void {
     this.sequencer = new ExchangeSequencer();
     this.recentTrades = [];
+    this.aiThoughts = [];
     this.fairValue = 10000;
     this.tickCount = 0;
 
@@ -46,7 +50,50 @@ export class ExchangeServer {
       initialCash: 5_000_000,
     });
 
-    this.bots = [
+    const recordThought = (thought: AIThoughtLog) => {
+      this.aiThoughts.unshift(thought);
+      if (this.aiThoughts.length > 40) {
+        this.aiThoughts.pop();
+      }
+    };
+
+    const llmAgents = [
+      new LLMTraderAgent({
+        traderId: 'ai-yolo-gpt',
+        name: 'ChadGPT (YOLO)',
+        persona: 'YOLO_DEGEN',
+        systemPrompt:
+          'You are an overconfident momentum trader who chases breakouts aggressively and hates missing moves.',
+        initialCash: 2_500_000,
+        seed: 707,
+        decisionIntervalTicks: 10,
+        onThought: recordThought,
+      }),
+      new LLMTraderAgent({
+        traderId: 'ai-claude-value',
+        name: 'Buffett-Bot (Value)',
+        persona: 'VALUE_CONTRARIAN',
+        systemPrompt:
+          'You are a patient contrarian value trader who fades order book imbalances using POST_ONLY limit orders.',
+        initialCash: 4_000_000,
+        seed: 808,
+        decisionIntervalTicks: 14,
+        onThought: recordThought,
+      }),
+      new LLMTraderAgent({
+        traderId: 'ai-quant-risk',
+        name: 'Quant-9000 (Risk)',
+        persona: 'QUANT_RISK',
+        systemPrompt:
+          'You are a disciplined quantitative trader focused on micro-structure imbalance and strict inventory neutrality.',
+        initialCash: 3_500_000,
+        seed: 909,
+        decisionIntervalTicks: 12,
+        onThought: recordThought,
+      }),
+    ];
+
+    const ruleBots: BotAgent[] = [
       new MarketMakerBot('mm-citadel', 'Citadel-Sim MM', 10_000_000, 101, 5, 20),
       new MarketMakerBot('mm-jump', 'Jump-Sim MM', 10_000_000, 202, 7, 15),
       new NoiseTraderBot('noise-retail-1', 'Retail Swarm A', 2_000_000, 303),
@@ -55,13 +102,25 @@ export class ExchangeServer {
       new MeanReversionBot('reversion-zen', 'MeanRev Zen', 3_000_000, 606),
     ];
 
-    for (const bot of this.bots) {
+    for (const agent of llmAgents) {
+      this.sequencer.registerTrader({
+        traderId: agent.traderId,
+        name: agent.name,
+        initialCash: agent.initialCash,
+        isLLM: true,
+      });
+    }
+
+    for (const bot of ruleBots) {
       this.sequencer.registerTrader({
         traderId: bot.traderId,
         name: bot.name,
         initialCash: bot.initialCash,
+        isLLM: false,
       });
     }
+
+    this.bots = [...llmAgents, ...ruleBots];
   }
 
   private startLoop(): void {
@@ -100,7 +159,6 @@ export class ExchangeServer {
           this.recordTrades(events);
           tickEvents.push(...events);
         } catch {
-       
         }
       }
     }
@@ -191,6 +249,7 @@ export class ExchangeServer {
       markPrice,
       book,
       events,
+      aiThoughts: this.aiThoughts.slice(0, 15),
       recentTrades: this.recentTrades.slice(-60),
       leaderboard: this.sequencer.ledger.getLeaderboard(markPrice),
     };
