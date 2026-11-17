@@ -14,12 +14,14 @@ import {
   NoiseTraderBot,
   SeededRNG,
 } from '@lob/traders';
+import { ShockInjector, ShockScenario } from './shockInjector.js';
 
 const PORT = Number(process.env.PORT ?? 8080);
 const TICK_MS = 250;
 
 export class ExchangeServer {
   private sequencer = new ExchangeSequencer();
+  private shockInjector = new ShockInjector();
   private bots: BotAgent[] = [];
   private recentTrades: Array<{ price: number; qty: number; timestamp: number }> = [];
   private aiThoughts: AIThoughtLog[] = [];
@@ -39,6 +41,7 @@ export class ExchangeServer {
 
   private setupSimulation(): void {
     this.sequencer = new ExchangeSequencer();
+    this.shockInjector = new ShockInjector();
     this.recentTrades = [];
     this.aiThoughts = [];
     this.fairValue = 10000;
@@ -49,6 +52,8 @@ export class ExchangeServer {
       name: 'You (Manual Desk)',
       initialCash: 5_000_000,
     });
+
+    this.shockInjector.register(this.sequencer);
 
     const recordThought = (thought: AIThoughtLog) => {
       this.aiThoughts.unshift(thought);
@@ -200,6 +205,21 @@ export class ExchangeServer {
           const { events } = this.sequencer.submit(cmd);
           this.recordTrades(events);
           this.broadcastState(events);
+        } else if (msg.type === 'SHOCK') {
+          const scenario = (msg.scenario ?? 'FLASH_CRASH') as ShockScenario;
+          const result = this.shockInjector.trigger(
+            scenario,
+            this.sequencer,
+            this.fairValue
+          );
+          this.fairValue = result.newFairValue;
+          const shockEvents: EngineEvent[] = [];
+          for (const cmd of result.commands) {
+            const { events } = this.sequencer.submit(cmd);
+            this.recordTrades(events);
+            shockEvents.push(...events);
+          }
+          this.broadcastState(shockEvents);
         } else if (msg.type === 'PAUSE') {
           this.isPaused = Boolean(msg.paused);
           this.broadcastState([]);
