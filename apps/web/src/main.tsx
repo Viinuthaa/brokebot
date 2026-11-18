@@ -1,22 +1,51 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { TopTickerBar } from './components/TopTickerBar';
+import { useExchangeSocket } from './hooks/useExchangeSocket';
 import './styles.css';
 
 function App() {
+  const {
+    status,
+    liveState,
+    replayState,
+    lastError,
+    togglePause,
+    resetExchange,
+  } = useExchangeSocket();
+
   return (
     <div className="terminal-shell">
-      <div className="panel">
-        <div className="panel-header">
-          <span>BROKEBOT // DETERMINISTIC LIMIT ORDER BOOK</span>
-          <span className="badge-orange">PHASE 3 INITIALIZED</span>
+      <TopTickerBar
+        status={status}
+        state={liveState}
+        isReplaying={replayState !== null}
+        replaySeq={replayState?.seq}
+        onTogglePause={togglePause}
+        onReset={resetExchange}
+      />
+
+      {lastError && (
+        <div
+          className="panel"
+          style={{
+            padding: '8px 14px',
+            background: '#fee2e2',
+            fontSize: '0.8rem',
+            fontWeight: 600,
+          }}
+        >
+          ERR: {lastError}
         </div>
-        <div style={{ padding: '24px' }}>
-          <h1 style={{ fontSize: '1.75rem', marginBottom: '8px' }}>
-            brokebot exchange terminal
-          </h1>
-          <p style={{ color: 'var(--ink-muted)', fontSize: '0.9rem' }}>
-            A stock exchange where AI traders go broke so you don’t have to.
-          </p>
+      )}
+
+      <div className="panel" style={{ padding: '18px', fontSize: '0.85rem' }}>
+        <div>
+          Connected to exchange stream — active orders on book:{' '}
+          <strong>
+            {(liveState?.book.bids.length ?? 0) + (liveState?.book.asks.length ?? 0)}
+          </strong>{' '}
+          levels | recent trades: <strong>{liveState?.recentTrades.length ?? 0}</strong>
         </div>
       </div>
     </div>
