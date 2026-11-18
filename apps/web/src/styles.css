@@ -1,0 +1,102 @@
+:root {
+  --bg-cream: #f3eee3;
+  --bg-cream-alt: #eae3d2;
+  --ink: #111111;
+  --ink-muted: #5a564e;
+  --accent-orange: #d9541e;
+  --accent-orange-soft: rgba(217, 84, 30, 0.14);
+  --bid-green: #166534;
+  --bid-bg: rgba(22, 101, 52, 0.14);
+  --ask-red: #b91c1c;
+  --ask-bg: rgba(185, 28, 28, 0.14);
+  --border-weight: 2px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-cream);
+  color: var(--ink);
+  font-family: 'IBM Plex Mono', monospace;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, .display-font {
+  font-family: 'Space Grotesk', sans-serif;
+  letter-spacing: -0.02em;
+}
+
+.terminal-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  gap: 12px;
+}
+
+.panel {
+  background: var(--bg-cream);
+  border: var(--border-weight) solid var(--ink);
+  box-shadow: 4px 4px 0px var(--ink);
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: var(--border-weight) solid var(--ink);
+  background: var(--bg-cream-alt);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.badge-orange {
+  background: var(--accent-orange);
+  color: var(--bg-cream);
+  padding: 2px 7px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border: 1.5px solid var(--ink);
+}
+
+.btn-brutal {
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 700;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  padding: 7px 12px;
+  border: var(--border-weight) solid var(--ink);
+  background: var(--bg-cream);
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: 2px 2px 0px var(--ink);
+  transition: transform 0.06s ease, box-shadow 0.06s ease;
+}
+
+.btn-brutal:hover {
+  background: var(--bg-cream-alt);
+}
+
+.btn-brutal:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0px 0px 0px var(--ink);
+}
+
+.btn-orange {
+  background: var(--accent-orange);
+  color: var(--bg-cream);
+}
+
+.btn-orange:hover {
+  background: #bf4615;
+}
