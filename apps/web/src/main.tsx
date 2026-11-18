@@ -1,5 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { MarketCanvasCharts } from './components/MarketCanvasCharts';
+import { OrderBookLadder } from './components/OrderBookLadder';
 import { TopTickerBar } from './components/TopTickerBar';
 import { useExchangeSocket } from './hooks/useExchangeSocket';
 import './styles.css';
@@ -13,6 +15,8 @@ function App() {
     togglePause,
     resetExchange,
   } = useExchangeSocket();
+
+  const activeBook = replayState ? replayState.book : liveState?.book;
 
   return (
     <div className="terminal-shell">
@@ -39,15 +43,24 @@ function App() {
         </div>
       )}
 
-      <div className="panel" style={{ padding: '18px', fontSize: '0.85rem' }}>
-        <div>
-          Connected to exchange stream — active orders on book:{' '}
-          <strong>
-            {(liveState?.book.bids.length ?? 0) + (liveState?.book.asks.length ?? 0)}
-          </strong>{' '}
-          levels | recent trades: <strong>{liveState?.recentTrades.length ?? 0}</strong>
+      <main
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '320px 1fr',
+          gap: '12px',
+          alignItems: 'start',
+        }}
+      >
+        <OrderBookLadder book={activeBook} />
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <MarketCanvasCharts
+            book={activeBook}
+            recentTrades={liveState?.recentTrades ?? []}
+            fairValue={liveState?.fairValue}
+          />
         </div>
-      </div>
+      </main>
     </div>
   );
 }
