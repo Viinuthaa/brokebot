@@ -1,5 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { AIReasoningFeed } from './components/AIReasoningFeed';
+import { LeaderboardPanel } from './components/LeaderboardPanel';
 import { MarketCanvasCharts } from './components/MarketCanvasCharts';
 import { OrderBookLadder } from './components/OrderBookLadder';
 import { TopTickerBar } from './components/TopTickerBar';
@@ -17,6 +19,9 @@ function App() {
   } = useExchangeSocket();
 
   const activeBook = replayState ? replayState.book : liveState?.book;
+  const activeLeaderboard = replayState
+    ? replayState.leaderboard
+    : (liveState?.leaderboard ?? []);
 
   return (
     <div className="terminal-shell">
@@ -46,7 +51,7 @@ function App() {
       <main
         style={{
           display: 'grid',
-          gridTemplateColumns: '320px 1fr',
+          gridTemplateColumns: '320px 1fr 360px',
           gap: '12px',
           alignItems: 'start',
         }}
@@ -59,6 +64,11 @@ function App() {
             recentTrades={liveState?.recentTrades ?? []}
             fairValue={liveState?.fairValue}
           />
+          <LeaderboardPanel traders={activeLeaderboard} />
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <AIReasoningFeed thoughts={liveState?.aiThoughts ?? []} />
         </div>
       </main>
     </div>
