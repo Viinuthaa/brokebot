@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import { AIReasoningFeed } from './components/AIReasoningFeed';
 import { LeaderboardPanel } from './components/LeaderboardPanel';
 import { MarketCanvasCharts } from './components/MarketCanvasCharts';
 import { OrderBookLadder } from './components/OrderBookLadder';
+import { OrderTicketPanel } from './components/OrderTicketPanel';
+import { ReplayScrubberBar } from './components/ReplayScrubberBar';
 import { TopTickerBar } from './components/TopTickerBar';
 import { useExchangeSocket } from './hooks/useExchangeSocket';
 import './styles.css';
@@ -14,14 +16,22 @@ function App() {
     liveState,
     replayState,
     lastError,
+    placeOrder,
     togglePause,
+    triggerShock,
     resetExchange,
+    queryReplay,
+    exitReplay,
   } = useExchangeSocket();
+
+  const [selectedPrice, setSelectedPrice] = useState<number | null>(null);
 
   const activeBook = replayState ? replayState.book : liveState?.book;
   const activeLeaderboard = replayState
     ? replayState.leaderboard
     : (liveState?.leaderboard ?? []);
+
+  const humanAccount = activeLeaderboard.find((t) => t.traderId === 'human-desk');
 
   return (
     <div className="terminal-shell">
@@ -32,6 +42,14 @@ function App() {
         replaySeq={replayState?.seq}
         onTogglePause={togglePause}
         onReset={resetExchange}
+      />
+
+      <ReplayScrubberBar
+        maxSeq={liveState?.seq ?? 0}
+        replaySeq={replayState?.seq ?? null}
+        disabled={status !== 'LIVE'}
+        onScrub={queryReplay}
+        onExitReplay={exitReplay}
       />
 
       {lastError && (
@@ -56,7 +74,10 @@ function App() {
           alignItems: 'start',
         }}
       >
-        <OrderBookLadder book={activeBook} />
+        <OrderBookLadder
+          book={activeBook}
+          onSelectPrice={(price) => setSelectedPrice(price)}
+        />
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <MarketCanvasCharts
@@ -68,6 +89,14 @@ function App() {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <OrderTicketPanel
+            selectedPrice={selectedPrice}
+            midPrice={activeBook?.midPrice}
+            humanAccount={humanAccount}
+            disabled={status !== 'LIVE' || replayState !== null}
+            onPlaceOrder={placeOrder}
+            onTriggerShock={triggerShock}
+          />
           <AIReasoningFeed thoughts={liveState?.aiThoughts ?? []} />
         </div>
       </main>
