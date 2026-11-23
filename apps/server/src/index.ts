@@ -1,3 +1,4 @@
+import { createServer, Server as HttpServer } from 'node:http';
 import { WebSocketServer, WebSocket } from 'ws';
 import {
   EngineCommand,
@@ -30,12 +31,18 @@ export class ExchangeServer {
   private tickCount = 0;
   private isPaused = false;
   private timer: NodeJS.Timeout | null = null;
+  private httpServer: HttpServer;
   private wss: WebSocketServer;
 
   constructor(port: number) {
     this.setupSimulation();
-    this.wss = new WebSocketServer({ port });
+    this.httpServer = createServer((_req, res) => {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ status: 'ok', service: 'brokebot-exchange' }));
+    });
+    this.wss = new WebSocketServer({ server: this.httpServer });
     this.wss.on('connection', (ws) => this.handleConnection(ws));
+    this.httpServer.listen(port);
     this.startLoop();
   }
 

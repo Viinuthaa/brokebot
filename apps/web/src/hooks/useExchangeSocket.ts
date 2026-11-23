@@ -9,7 +9,11 @@ import {
 
 export type ConnectionStatus = 'CONNECTING' | 'LIVE' | 'DISCONNECTED';
 
-export function useExchangeSocket(url = 'ws://localhost:8080') {
+const DEFAULT_WS_URL =
+  (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_WS_URL ??
+  'ws://localhost:8080';
+
+export function useExchangeSocket(url = DEFAULT_WS_URL) {
   const [status, setStatus] = useState<ConnectionStatus>('CONNECTING');
   const [liveState, setLiveState] = useState<TickPayload | null>(null);
   const [replayState, setReplayState] = useState<ReplayPayload | null>(null);
